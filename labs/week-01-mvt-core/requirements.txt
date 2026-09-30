@@ -1,0 +1,3 @@
+# Week 1: Core Mechanics & ORM Optimization
+django>=5.1,<5.2
+django-environ>=0.11.2

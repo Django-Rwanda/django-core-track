@@ -1,0 +1,50 @@
+name: Lab Milestone Submission
+description: Submit a completed weekly lab PR for review and assessment
+title: "[LAB SUBMISSION]: "
+labels: ["lab", "curriculum"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        ### Django Rwanda — 30-Day Developer Acceleration Track
+        Thank you for submitting your lab. Please provide the PR link and test verification details below.
+  - type: input
+    id: pr_link
+    attributes:
+      label: Pull Request URL
+      description: Link to your pull request for this week's lab.
+      placeholder: https://github.com/Django-Rwanda/django-core-track/pull/123
+    validations:
+      required: true
+  - type: dropdown
+    id: week
+    attributes:
+      label: Lab Milestone
+      options:
+        - "Week 1: Core Mechanics & ORM Optimization"
+        - "Week 2: Hybrid SSR & RESTful APIs"
+        - "Week 3: Service Layer & Pytest Suite"
+        - "Week 4: Docker, Gunicorn & Production Compose"
+    validations:
+      required: true
+  - type: textarea
+    id: verification
+    attributes:
+      label: Verification Output
+      description: Paste the output of the acceptance test command (e.g. pytest or docker compose ps).
+      render: shell
+    validations:
+      required: true
+  - type: checkboxes
+    id: checklist
+    attributes:
+      label: Quality Checklist
+      options:
+        - label: Ruff linter and formatter pass without errors (`ruff check .`)
+          required: true
+        - label: Mypy static type analysis passes cleanly (`mypy .`)
+          required: true
+        - label: All automated tests pass with ≥ 85% coverage (`pytest`)
+          required: true
+        - label: I reviewed and adhered to the referenced DSF documentation
+          required: true

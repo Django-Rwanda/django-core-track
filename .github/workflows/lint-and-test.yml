@@ -1,0 +1,99 @@
+name: PR Quality Gates (Lint & Test)
+
+on:
+  pull_request:
+    paths:
+      - 'labs/**'
+      - 'pyproject.toml'
+      - 'requirements-dev.txt'
+      - '.github/workflows/lint-and-test.yml'
+  push:
+    branches:
+      - main
+
+jobs:
+  lint-and-test:
+    name: Scoped Quality Verification
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_DB: django_rwanda_test
+          POSTGRES_USER: djangouser
+          POSTGRES_PASSWORD: djangopass
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+      redis:
+        image: redis:7-alpine
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: "pip"
+
+      - name: Install Universal Developer Tooling
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements-dev.txt
+
+      - name: Detect Changed Labs & Run Scoped Checks
+        env:
+          BASE_REF: ${{ github.base_ref || 'main' }}
+        run: |
+          echo "Determining changed lab milestones against origin/$BASE_REF..."
+          git fetch origin "$BASE_REF" --depth=1 || true
+
+          # Find directories under labs/ that contain changed files
+          CHANGED_LABS=$(git diff --name-only "origin/$BASE_REF"...HEAD | grep -E '^labs/' | cut -d/ -f1-2 | sort -u || true)
+
+          if [ -z "$CHANGED_LABS" ]; then
+            echo "No lab directories modified. Running root linter check."
+            ruff check .
+            exit 0
+          fi
+
+          echo "Changed labs detected: $CHANGED_LABS"
+          for LAB_DIR in $CHANGED_LABS; do
+            echo "===================================================="
+            echo "Running checks for: $LAB_DIR"
+            echo "===================================================="
+
+            # Install isolated lab requirements if present
+            if [ -f "$LAB_DIR/requirements.txt" ]; then
+              echo "-> Installing isolated requirements for $LAB_DIR..."
+              pip install -r "$LAB_DIR/requirements.txt"
+            fi
+
+            echo "-> Linting and formatting with Ruff..."
+            ruff check "$LAB_DIR/"
+            ruff format --check "$LAB_DIR/"
+
+            if [ -d "$LAB_DIR/tests" ]; then
+              echo "-> Running automated tests with Pytest..."
+              pytest "$LAB_DIR/tests/"
+            else
+              echo "-> No tests directory found in $LAB_DIR; skipping pytest."
+            fi
+          done

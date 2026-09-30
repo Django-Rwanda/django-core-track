@@ -1,0 +1,44 @@
+name: Issue Auto Assignment
+
+on:
+  issue_comment:
+    types: [created]
+
+permissions:
+  issues: write
+
+jobs:
+  assign:
+    name: Assign Issue on .take
+    runs-on: ubuntu-latest
+    if: (!github.event.issue.pull_request) && startsWith(github.event.comment.body, '.take')
+    steps:
+      - name: Assign commenter to issue
+        uses: actions-cool/issues-helper@v3
+        with:
+          action: 'assign'
+          token: ${{ secrets.GITHUB_TOKEN }}
+          issue-number: ${{ github.event.issue.number }}
+          assignees: ${{ github.event.comment.user.login }}
+
+      - name: Add in-progress label
+        uses: actions-cool/issues-helper@v3
+        with:
+          action: 'add-labels'
+          token: ${{ secrets.GITHUB_TOKEN }}
+          issue-number: ${{ github.event.issue.number }}
+          labels: 'in-progress'
+
+      - name: Post confirmation comment
+        uses: actions-cool/issues-helper@v3
+        with:
+          action: 'create-comment'
+          token: ${{ secrets.GITHUB_TOKEN }}
+          issue-number: ${{ github.event.issue.number }}
+          body: |
+            👋 @${{ github.event.comment.user.login }} has claimed this issue!
+
+            Remember to:
+            1. Create a feature branch: `<username>/issue-${{ github.event.issue.number }}-<description>`
+            2. Follow the lab instructions in the issue description.
+            3. Open a Draft PR early to receive feedback from mentors.

@@ -216,3 +216,14 @@ __marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
+
+# ------------------------------------------------------------------------------
+# Django Rwanda Monorepo: Lab Workspace Isolation & Git Hygiene
+# ------------------------------------------------------------------------------
+labs/**/db.sqlite3
+labs/**/db.sqlite3-journal
+labs/**/.pytest_cache/
+labs/**/__pycache__/
+labs/**/media/
+labs/**/staticfiles/
+labs/**/.env
